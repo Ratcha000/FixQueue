@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { thaiDate } from '../format.js';
 import ErrorAlert from '../components/ErrorAlert.jsx';
+import Loader, { LoadingOverlay } from '../components/Loader.jsx';
 
 const OTHER = '__other__';
 const CYCLES = ['1 เดือน', '3 เดือน', '6 เดือน', '12 เดือน'];
@@ -85,12 +86,13 @@ export default function BookForm() {
       </div>
     );
   }
-  if (!dates) return <div className="card"><div className="skeleton" style={{ height: 320 }} /></div>;
+  if (!dates) return <div className="card form-card"><Loader label="กำลังโหลดแบบฟอร์ม…" /></div>;
 
   const appIsOther = form.app === OTHER;
 
   return (
     <div className="card form-card">
+      <LoadingOverlay show={submitting} label="กำลังลงคิว กรุณารอสักครู่…" />
       <Link to="/" className="back-link">‹ กลับหน้าหลัก</Link>
       <h1>ลงคิวแจ้งปัญหา</h1>
 

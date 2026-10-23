@@ -4,6 +4,7 @@ import { api } from '../api.js';
 import { thaiDate, thaiDateTime } from '../format.js';
 import StatusBadge from '../components/StatusBadge.jsx';
 import ErrorAlert from '../components/ErrorAlert.jsx';
+import { LoadingOverlay } from '../components/Loader.jsx';
 
 export default function CheckQueue() {
   const [pin, setPin] = useState('');
@@ -27,6 +28,7 @@ export default function CheckQueue() {
 
   return (
     <div className="card form-card">
+      <LoadingOverlay show={loading} label="กำลังค้นหาคิว…" />
       <Link to="/" className="back-link">‹ กลับหน้าหลัก</Link>
       <h1>เช็คคิว</h1>
       <form onSubmit={submit} className="pin-form">

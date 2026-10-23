@@ -5,6 +5,7 @@ import QueueCard from '../components/QueueCard.jsx';
 import NotifyModal from '../components/NotifyModal.jsx';
 import SettingsPanel from '../components/SettingsPanel.jsx';
 import ErrorAlert from '../components/ErrorAlert.jsx';
+import Loader, { LoadingOverlay } from '../components/Loader.jsx';
 
 const COLUMNS = ['waiting', 'in_progress', 'done'];
 
@@ -32,7 +33,7 @@ export default function Admin() {
       .catch(() => setAuth(false));
   }, []);
 
-  if (auth === null) return <div className="card"><div className="skeleton" style={{ height: 200 }} /></div>;
+  if (auth === null) return <Loader />;
   if (!auth) {
     return (
       <AdminLogin
@@ -64,6 +65,7 @@ function AdminLogin({ onSuccess }) {
 
   return (
     <div className="card form-card login-card">
+      <LoadingOverlay show={loading} label="กำลังตรวจสอบ…" />
       <h1>เข้าสู่ระบบ</h1>
       <form onSubmit={submit} className="form">
         <label className="field">
@@ -127,6 +129,7 @@ function Dashboard({ today, onLogout }) {
 
   return (
     <div className="admin">
+      <LoadingOverlay show={!!busy} label="กำลังอัปเดตสถานะ…" />
       <header className="admin-head">
         <div>
           <h1>จัดการคิว</h1>
@@ -161,7 +164,7 @@ function Dashboard({ today, onLogout }) {
       </div>
 
       {queues === null ? (
-        <div className="skeleton" style={{ height: 240 }} />
+        <Loader label="กำลังโหลดรายการคิว…" />
       ) : (
         <div className="board">
           {COLUMNS.map((s) => (

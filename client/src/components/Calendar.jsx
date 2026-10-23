@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { MONTHS_FULL, thaiDate } from '../format.js';
 import ErrorAlert from './ErrorAlert.jsx';
+import Loader from './Loader.jsx';
 
 const WEEK_HEAD = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
 
@@ -33,7 +34,7 @@ export default function Calendar() {
   }, [month]);
 
   if (error) return <ErrorAlert error={error} />;
-  if (!data || !month) return <div className="skeleton calendar-skeleton" />;
+  if (!data || !month) return <Loader label="กำลังโหลดปฏิทิน…" />;
 
   const thisMonth = data.today.slice(0, 7);
   const [y, m] = month.split('-').map(Number);

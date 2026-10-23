@@ -132,14 +132,80 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .alert-text { margin: 0; }
 .alert .btn { margin-top: 10px; }
 
-.skeleton {
-  border-radius: var(--radius);
-  background: linear-gradient(90deg, var(--surface-2), var(--border), var(--surface-2));
-  background-size: 200% 100%;
-  animation: shimmer 1.2s infinite;
+/* ---------- Loader (แว่นขยายวน) ---------- */
+.loader {
+  --color-1: #fff;
+  --size: 1px;
+
+  width: calc(48 * var(--size));
+  height: calc(48 * var(--size));
+  display: block;
+  margin: calc(20 * var(--size)) auto;
+  position: relative;
+  border: calc(3 * var(--size)) solid var(--color-1);
+  border-radius: 50%;
+  box-sizing: border-box;
+  animation: animloader 2s linear infinite;
 }
-.calendar-skeleton { height: 360px; }
-@keyframes shimmer { to { background-position: -200% 0; } }
+.loader::after {
+  content: '';
+  box-sizing: border-box;
+  width: calc(6 * var(--size));
+  height: calc(24 * var(--size));
+  background: var(--color-1);
+  transform: rotate(-45deg);
+  position: absolute;
+  bottom: calc(-20 * var(--size));
+  left: calc(46 * var(--size));
+}
+
+@keyframes animloader {
+  0% {
+    transform: translate(calc(-10 * var(--size)), calc(-10 * var(--size)));
+  }
+  25% {
+    transform: translate(calc(-10 * var(--size)), calc(10 * var(--size)));
+  }
+  50% {
+    transform: translate(calc(10 * var(--size)), calc(10 * var(--size)));
+  }
+  75% {
+    transform: translate(calc(10 * var(--size)), calc(-10 * var(--size)));
+  }
+  100% {
+    transform: translate(calc(-10 * var(--size)), calc(-10 * var(--size)));
+  }
+}
+
+/* สีของร้าน (พื้นเว็บเป็นสีขาว ค่าเดิม #fff จะมองไม่เห็น) */
+.loader-wrap .loader { --color-1: var(--primary); }
+.loader-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 0 8px;
+}
+.loader-label { margin: 16px 0 0; color: var(--muted); text-align: center; }
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(255 255 255 / 0.7);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.loading-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 8px 32px 20px;
+  min-width: 220px;
+}
 
 .back-link { display: inline-block; margin-bottom: 8px; text-decoration: none; font-size: 0.95rem; }
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { thaiDate } from '../format.js';
 import ErrorAlert from './ErrorAlert.jsx';
+import Loader, { LoadingOverlay } from './Loader.jsx';
 
 const MAX_ANNOUNCEMENTS = 3;
 
@@ -19,7 +20,7 @@ export default function SettingsPanel({ onClose, onUnauthorized }) {
     api.get('/api/admin/settings').then(setS).catch((e) => (e.status === 401 ? onUnauthorized() : setLoadError(e)));
   }, [onUnauthorized]);
 
-  if (!s) return <div className="card"><div className="skeleton" style={{ height: 160 }} /><ErrorAlert error={loadError} /></div>;
+  if (!s) return <div className="card">{loadError ? <ErrorAlert error={loadError} /> : <Loader label="กำลังโหลดการตั้งค่า…" />}</div>;
 
   const save = async () => {
     setSaving(true);
@@ -38,12 +39,15 @@ export default function SettingsPanel({ onClose, onUnauthorized }) {
   const archive = async () => {
     if (!confirm('ย้ายคิวที่แก้ไขเสร็จแล้วและเก่ากว่า 90 วัน ไปเก็บในชีต Archive?')) return;
     setMsg('');
+    setSaving(true);
     try {
       const r = await api.post('/api/admin/archive');
       setMsg(`ย้ายแล้ว ${r.moved} รายการ`);
     } catch (e) {
       if (e.status === 401) onUnauthorized();
       else setMsg(e.message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -75,6 +79,7 @@ export default function SettingsPanel({ onClose, onUnauthorized }) {
 
   return (
     <section className="card settings">
+      <LoadingOverlay show={saving} label="กำลังบันทึก…" />
       <div className="settings-head">
         <h2>ตั้งค่า</h2>
         <button type="button" className="icon-btn" onClick={onClose} aria-label="ปิด">✕</button>
