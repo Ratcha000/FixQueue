@@ -3,6 +3,7 @@ services:
     name: queue-app
     runtime: node
     plan: free
+    region: singapore
     buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
