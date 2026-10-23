@@ -1,7 +1,6 @@
 # ระบบจองคิวแจ้งปัญหาแอป
 
-🌐 **เว็บจริง:** https://appdpremium.onrender.com
-🔐 **หน้าแอดมิน:** https://appdpremium.onrender.com/admin (ไม่มีลิงก์จากหน้าลูกค้า)
+**เว็บจริง:** https://appdpremium.onrender.com
 
 React + Vite (หน้าบ้าน) · Node.js + Express (หลังบ้าน) · Google Sheet ผ่าน Apps Script (ฐานข้อมูล) · Render ฟรี (Singapore)
 
