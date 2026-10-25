@@ -89,6 +89,10 @@ function Dashboard({ today, onLogout }) {
   const [notifyFor, setNotifyFor] = useState(null);
   const [tab, setTab] = useState('waiting'); // ใช้บนมือถือ
   const [showSettings, setShowSettings] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [results, setResults] = useState(null); // null = ไม่ได้ค้นหา
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -111,13 +115,35 @@ function Dashboard({ today, onLogout }) {
     setBusy(code);
     try {
       const updated = await api.patch(`/api/admin/queues/${encodeURIComponent(code)}`, { status });
-      setQueues((qs) => qs.map((q) => (q.code === code ? updated : q)));
+      const swap = (list) => list && list.map((q) => (q.code === code ? { ...q, ...updated } : q));
+      setQueues(swap);
+      setResults(swap);
     } catch (err) {
       if (err.status === 401) onLogout();
       else alert(err.message);
     } finally {
       setBusy('');
     }
+  };
+
+  const search = async (e) => {
+    e.preventDefault();
+    setSearchError(null);
+    setSearching(true);
+    try {
+      setResults(await api.get(`/api/admin/search?email=${encodeURIComponent(searchText.trim())}`));
+    } catch (err) {
+      if (err.status === 401) onLogout();
+      else setSearchError(err);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchText('');
+    setResults(null);
+    setSearchError(null);
   };
 
   const logout = async () => {
@@ -130,6 +156,7 @@ function Dashboard({ today, onLogout }) {
   return (
     <div className="admin">
       <LoadingOverlay show={!!busy} label="กำลังอัปเดตสถานะ…" />
+      <LoadingOverlay show={searching} label="กำลังค้นหา…" />
       <header className="admin-head">
         <div>
           <h1>จัดการคิว</h1>
@@ -146,6 +173,45 @@ function Dashboard({ today, onLogout }) {
 
       {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} onUnauthorized={onLogout} />}
 
+      <form className="admin-search" onSubmit={search} role="search">
+        <input
+          type="search"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          placeholder="ค้นหาอีเมลที่มีปัญหา (ค้นหาจากทั้งหมด ไม่จำกัดวันที่)"
+          aria-label="ค้นหาอีเมลที่มีปัญหา"
+          inputMode="email"
+          autoCapitalize="off"
+          minLength={3}
+          required
+        />
+        <button type="submit" className="btn btn-primary">ค้นหา</button>
+        {results !== null && <button type="button" className="btn btn-ghost" onClick={clearSearch}>ล้าง</button>}
+      </form>
+      <ErrorAlert error={searchError} />
+
+      {results !== null ? (
+        <section className="search-results">
+          <h2>
+            ผลการค้นหา “{searchText.trim()}” <span className="count">{results.length}</span>
+          </h2>
+          {results.length === 0 && <p className="muted empty">ไม่พบคิวที่มีอีเมลนี้</p>}
+          <div className="results-grid">
+            {results.map((q) => (
+              <QueueCard
+                key={`${q.archived ? 'a' : 'q'}-${q.code}`}
+                queue={q}
+                showDate
+                busy={busy === q.code}
+                onStart={() => setStatus(q.code, 'in_progress')}
+                onFinish={() => setNotifyFor(q)}
+                onRevert={() => setStatus(q.code, q.status === 'done' ? 'in_progress' : 'waiting')}
+              />
+            ))}
+          </div>
+          {results.length >= 100 && <p className="muted small">แสดง 100 รายการแรก พิมพ์อีเมลให้ละเอียดขึ้นเพื่อกรองผล</p>}
+        </section>
+      ) : (<>
       <ErrorAlert error={error} />
 
       <div className="admin-tabs" role="tablist">
@@ -187,6 +253,7 @@ function Dashboard({ today, onLogout }) {
           ))}
         </div>
       )}
+      </>)}
 
       {notifyFor && (
         <NotifyModal

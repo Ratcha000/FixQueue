@@ -163,7 +163,7 @@ const MAX = {
   problem_email: 200, family_name: 100, notify_email: 200,
   bill_due: 10, billing_cycle: 50, detail: 2000,
 };
-const REQUIRED = ['app', 'problem', 'line_name', 'problem_email', 'family_name', 'notify_email', 'bill_due', 'billing_cycle'];
+const REQUIRED = ['line_name', 'problem_email', 'family_name', 'bill_due', 'billing_cycle'];
 const EMAIL_LABEL = { problem_email: 'อีเมลที่มีปัญหา', notify_email: 'อีเมลลูกค้า' };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -179,7 +179,8 @@ export async function createQueue(input) {
     if (!data[k]) throw new HttpError(400, 'กรุณากรอกข้อมูลให้ครบทุกช่องที่มีเครื่องหมาย *');
   }
   for (const [k, label] of Object.entries(EMAIL_LABEL)) {
-    if (!EMAIL_RE.test(data[k])) throw new HttpError(400, `รูปแบบ${label}ไม่ถูกต้อง`);
+    // ช่องที่ไม่บังคับ (อีเมลลูกค้า) ตรวจเฉพาะเมื่อกรอกมา
+    if (data[k] && !EMAIL_RE.test(data[k])) throw new HttpError(400, `รูปแบบ${label}ไม่ถูกต้อง`);
   }
   if (!isValidDate(data.bill_due)) throw new HttpError(400, 'กรุณาเลือกวันหมดรอบบิล');
   if (!isValidDate(date)) throw new HttpError(400, 'กรุณาเลือกวันที่');
@@ -268,6 +269,25 @@ export async function listByDate(date) {
   return rows
     .filter((r) => r.date === date)
     .sort((a, b) => (parseInt(a.seq, 10) || 0) - (parseInt(b.seq, 10) || 0));
+}
+
+const SEARCH_LIMIT = 100;
+
+/** ค้นหาคิวจากอีเมลที่มีปัญหา (บางส่วนของอีเมลก็ได้) ทั้งคิวปัจจุบันและชีต Archive */
+export async function searchByEmail(text) {
+  const needle = String(text || '').trim().toLowerCase();
+  if (needle.length < 3) throw new HttpError(400, 'พิมพ์อีเมลอย่างน้อย 3 ตัวอักษร');
+  const [current, archived] = await Promise.all([
+    store.getRows('Queues', { fresh: true }),
+    store.getRows('Archive').catch(() => []),
+  ]);
+  const match = (r) => r.problem_email.toLowerCase().includes(needle);
+  return [
+    ...current.filter(match),
+    ...archived.filter(match).map((r) => ({ ...r, archived: true })),
+  ]
+    .sort((a, b) => b.date.localeCompare(a.date) || (parseInt(a.seq, 10) || 0) - (parseInt(b.seq, 10) || 0))
+    .slice(0, SEARCH_LIMIT);
 }
 
 export async function updateStatus(code, status) {

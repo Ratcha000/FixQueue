@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { copyText, thaiDate, thaiDateTime } from '../format.js';
 import StatusBadge from './StatusBadge.jsx';
 
-export default function QueueCard({ queue: q, busy, onStart, onFinish, onRevert }) {
+export default function QueueCard({ queue: q, busy, showDate, onStart, onFinish, onRevert }) {
   const [copied, setCopied] = useState('');
 
   const copy = async (which, text) => {
@@ -16,9 +16,13 @@ export default function QueueCard({ queue: q, busy, onStart, onFinish, onRevert 
     <article className={`qcard qcard-${q.status}`}>
       <div className="qcard-head">
         <span className="mono qcode">{q.code}</span>
-        <StatusBadge status={q.status} />
+        <span className="qcard-badges">
+          {q.archived && <span className="badge badge-archived">เก็บถาวร</span>}
+          <StatusBadge status={q.status} />
+        </span>
       </div>
-      <p className="qcard-title"><b>{q.app}</b> · {q.problem}</p>
+      {showDate && <p className="qcard-date">วันนัด {thaiDate(q.date, { weekday: true })}</p>}
+      {(q.app || q.problem) && <p className="qcard-title"><b>{q.app}</b>{q.app && q.problem ? ' · ' : ''}{q.problem}</p>}
       {q.detail && <p className="qcard-detail pre">{q.detail}</p>}
       <dl className="qcard-meta">
         <dt>ชื่อ LINE</dt><dd>{q.line_name}</dd>
@@ -37,7 +41,7 @@ export default function QueueCard({ queue: q, busy, onStart, onFinish, onRevert 
             {copied === 'family' ? 'คัดลอกแล้ว ✓' : 'คัดลอกชื่อ family'}
           </button>
         )}
-        {q.status === 'waiting' && (
+        {q.status === 'waiting' && !q.archived && (
           <button type="button" className="btn btn-sm btn-progress" onClick={onStart} disabled={busy}>เริ่มแก้ไข</button>
         )}
         {q.status !== 'done' ? (
@@ -45,7 +49,7 @@ export default function QueueCard({ queue: q, busy, onStart, onFinish, onRevert 
         ) : (
           <button type="button" className="btn btn-sm btn-ghost" onClick={onFinish} disabled={busy}>ส่งอีเมลอีกครั้ง</button>
         )}
-        {q.status !== 'waiting' && (
+        {q.status !== 'waiting' && !q.archived && (
           <button type="button" className="btn btn-sm btn-ghost" onClick={onRevert} disabled={busy}>↩ ย้อนสถานะ</button>
         )}
       </div>

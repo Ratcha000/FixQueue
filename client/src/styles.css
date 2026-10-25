@@ -63,14 +63,51 @@ button, input, select, textarea { font: inherit; color: inherit; }
   text-decoration: none;
   font-weight: 600;
 }
-.brand-mark {
-  width: 32px; height: 32px;
-  border-radius: 9px;
-  background: var(--primary);
-  color: var(--primary-ink);
-  display: grid; place-items: center;
-  font-weight: 700;
+.brand-logo {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+  flex: none;
 }
+.brand-text { display: flex; flex-direction: column; line-height: 1.25; }
+.brand-text strong { font-size: 1.05rem; }
+.brand-text small { color: var(--muted); font-weight: 400; font-size: 0.8rem; }
+
+/* ---------- Footer ---------- */
+.app { display: flex; flex-direction: column; }
+.app > .container { flex: 1 0 auto; width: 100%; }
+.footer {
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+  padding: 24px 16px calc(16px + env(safe-area-inset-bottom));
+}
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.footer-brand { display: flex; align-items: center; gap: 12px; }
+.footer-brand p { margin: 0; }
+.footer-logo { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex: none; }
+.footer-links { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+.footer-links a { color: var(--text); text-decoration: none; font-weight: 500; min-height: 32px; display: inline-flex; align-items: center; }
+.footer-links a:hover { color: var(--primary); }
+.footer-line {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--line);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+.footer-copy { max-width: 1200px; margin: 16px auto 0; color: var(--muted); font-size: 0.8rem; }
 
 /* ---------- Generic ---------- */
 .card {
@@ -443,6 +480,16 @@ input[readonly] { background: var(--surface-2); }
 .tab.is-active.tab-in_progress { background: var(--progress-soft); color: var(--progress); border-color: transparent; }
 .tab.is-active.tab-done { background: var(--done-soft); color: var(--done); border-color: transparent; }
 
+.admin-search { display: flex; gap: 8px; margin-bottom: 12px; }
+.admin-search input { flex: 1; min-width: 0; }
+.admin-search .btn { flex: none; }
+.search-results h2 { display: flex; align-items: center; gap: 8px; font-size: 1.05rem; }
+.search-results .count { background: var(--surface-2); border-radius: 999px; padding: 0 10px; font-size: 0.85rem; }
+.results-grid { display: grid; gap: 12px; }
+.results-grid .qcard { margin-bottom: 0; }
+.qcard-badges { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.qcard-date { margin: 6px 0 0; font-weight: 600; color: var(--primary); font-size: 0.92rem; }
+.badge-archived { background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
 .board { display: grid; gap: 16px; }
 .board > * { min-width: 0; }
 .column { display: none; }
@@ -503,6 +550,22 @@ input[readonly] { background: var(--surface-2); }
 }
 .modal-actions { display: flex; flex-direction: column-reverse; gap: 8px; margin-top: 12px; }
 
+/* ---------- ป๊อปอัป "ก่อนลงคิว อ่านก่อนนะ" ---------- */
+.rules-modal { max-width: 440px; }
+.rules-title { font-size: 1.6rem; color: var(--primary); margin: 4px 0 12px; }
+.rules-list { margin: 0 0 16px; padding-left: 1.6em; font-size: 1.1rem; line-height: 1.75; }
+.rules-hl { color: var(--danger); }
+.rules-note {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.rules-btn { min-height: 54px; font-size: 1.15rem; border-radius: 14px; }
+
 /* ---------- Tablet (iPad) ---------- */
 @media (min-width: 768px) {
   .container { padding: 24px 24px 40px; }
@@ -522,6 +585,9 @@ input[readonly] { background: var(--surface-2); }
   .modal { max-width: 600px; border-radius: 18px; padding: 24px; }
   .modal-actions { flex-direction: row; justify-content: flex-end; }
   .qcard-actions .btn { flex: 0 0 auto; }
+  .results-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .footer-inner { flex-direction: row; align-items: center; justify-content: space-between; }
+  .footer-line { align-self: auto; }
 }
 
 /* ---------- Desktop ---------- */

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { refreshLineUrl } from './lineUrl.js';
 import Announcements from './components/Announcements.jsx';
+import Footer from './components/Footer.jsx';
 import Home from './pages/Home.jsx';
 import BookForm from './pages/BookForm.jsx';
 import BookSuccess from './pages/BookSuccess.jsx';
@@ -21,8 +22,11 @@ export default function App() {
       {!isAdmin && (
         <header className="topbar">
           <Link to="/" className="brand">
-            <span className="brand-mark">Q</span>
-            <span>จองคิวแจ้งปัญหาแอป</span>
+            <img src="/logo-sm.jpeg" alt="" width="40" height="40" className="brand-logo" />
+            <span className="brand-text">
+              <strong>Appde Premium</strong>
+              <small>จองคิวแจ้งปัญหาแอป</small>
+            </span>
           </Link>
         </header>
       )}
@@ -38,6 +42,7 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
+      {!isAdmin && <Footer />}
     </div>
   );
 }

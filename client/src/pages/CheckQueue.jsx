@@ -67,8 +67,8 @@ export default function CheckQueue() {
           <dl className="detail-list">
             <dt>วันที่นัด</dt><dd>{thaiDate(result.date, { weekday: true })}</dd>
             <dt>ลงคิวเมื่อ</dt><dd>{thaiDateTime(result.created_at)}</dd>
-            <dt>แอป</dt><dd>{result.app}</dd>
-            <dt>ปัญหา</dt><dd>{result.problem}</dd>
+            {result.app && (<><dt>แอป</dt><dd>{result.app}</dd></>)}
+            {result.problem && (<><dt>ปัญหา</dt><dd>{result.problem}</dd></>)}
             {result.detail && (<><dt>รายละเอียด</dt><dd className="pre">{result.detail}</dd></>)}
             <dt>ชื่อ LINE</dt><dd>{result.line_name}</dd>
             <dt>อีเมลที่มีปัญหา</dt><dd className="break">{result.problem_email}</dd>
