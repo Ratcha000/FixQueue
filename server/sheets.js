@@ -107,6 +107,19 @@ class AppsScriptStore {
     this.cache.delete(name);
   }
 
+  /** ลบแถวที่คอลัมน์หลักตรงกับ value */
+  async remove(name, value) {
+    try {
+      await this.call('remove', { sheet: name, key: KEY[name], value });
+    } catch (err) {
+      if (/unknown action/.test(err.message)) {
+        throw new Error('Apps Script ยังไม่รองรับการลบ — อัปเดต Code.gs แล้ว Deploy เป็น New version');
+      }
+      throw err;
+    }
+    this.cache.delete(name);
+  }
+
   async replaceAll(name, objs) {
     await this.call('replaceAll', { sheet: name, objs: objs.map((o) => clean(name, o)) });
     this.cache.delete(name);
@@ -142,6 +155,12 @@ class MemoryStore {
     const i = this.data[name].findIndex((o) => o[key] === obj[key]);
     if (i < 0) throw new Error('not found');
     this.data[name][i] = clean(name, obj);
+  }
+  async remove(name, value) {
+    const key = KEY[name];
+    const i = this.data[name].findIndex((o) => o[key] === value);
+    if (i < 0) throw new Error('not found');
+    this.data[name].splice(i, 1);
   }
   async replaceAll(name, objs) {
     this.data[name] = objs.map((o) => clean(name, o));

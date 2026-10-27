@@ -302,6 +302,15 @@ export async function updateStatus(code, status) {
   });
 }
 
+export async function deleteQueue(code) {
+  return withLock(async () => {
+    const rows = await store.getRows('Queues', { fresh: true });
+    if (!rows.some((r) => r.code === code)) throw new HttpError(404, 'ไม่พบคิวนี้');
+    await store.remove('Queues', code);
+    return { ok: true, code };
+  });
+}
+
 // ---------- ย้ายคิวเก่าไปชีต Archive ----------
 export const ARCHIVE_AFTER_DAYS = 90;
 let lastArchiveDay = '';

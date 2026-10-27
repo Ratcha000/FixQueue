@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { copyText, thaiDate, thaiDateTime } from '../format.js';
 import StatusBadge from './StatusBadge.jsx';
 
-export default function QueueCard({ queue: q, busy, showDate, onStart, onFinish, onRevert }) {
+export default function QueueCard({ queue: q, busy, showDate, onStart, onFinish, onRevert, onDelete }) {
   const [copied, setCopied] = useState('');
 
   const copy = async (which, text) => {
@@ -27,7 +27,7 @@ export default function QueueCard({ queue: q, busy, showDate, onStart, onFinish,
       <dl className="qcard-meta">
         <dt>ชื่อ LINE</dt><dd>{q.line_name}</dd>
         <dt>อีเมลที่มีปัญหา</dt><dd className="break">{q.problem_email}</dd>
-        <dt>ชื่อ family</dt><dd>{q.family_name || '-'}</dd>
+        <dt>หัวแฟม</dt><dd>{q.family_name || '-'}</dd>
         <dt>เมลลูกค้า</dt><dd className="break">{q.notify_email || '-'}</dd>
         <dt>หมดรอบบิล</dt><dd>{q.bill_due ? thaiDate(q.bill_due) : '-'}{q.billing_cycle ? ` · ${q.billing_cycle}` : ''}</dd>
         <dt>ลงคิว</dt><dd>{thaiDateTime(q.created_at)}</dd>
@@ -51,6 +51,9 @@ export default function QueueCard({ queue: q, busy, showDate, onStart, onFinish,
         )}
         {q.status !== 'waiting' && !q.archived && (
           <button type="button" className="btn btn-sm btn-ghost" onClick={onRevert} disabled={busy}>↩ ย้อนสถานะ</button>
+        )}
+        {!q.archived && (
+          <button type="button" className="btn btn-sm btn-danger" onClick={onDelete} disabled={busy}>ลบ</button>
         )}
       </div>
     </article>

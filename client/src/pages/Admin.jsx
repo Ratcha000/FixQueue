@@ -126,6 +126,22 @@ function Dashboard({ today, onLogout }) {
     }
   };
 
+  const remove = async (q) => {
+    if (!window.confirm(`ลบคิว ${q.code} (${q.line_name || q.problem_email}) ใช่ไหม?\nลบแล้วกู้คืนจากหน้าเว็บไม่ได้`)) return;
+    setBusy(q.code);
+    try {
+      await api.del(`/api/admin/queues/${encodeURIComponent(q.code)}`);
+      const drop = (list) => list && list.filter((x) => x.archived || x.code !== q.code);
+      setQueues(drop);
+      setResults(drop);
+    } catch (err) {
+      if (err.status === 401) onLogout();
+      else alert(err.message);
+    } finally {
+      setBusy('');
+    }
+  };
+
   const search = async (e) => {
     e.preventDefault();
     setSearchError(null);
@@ -206,6 +222,7 @@ function Dashboard({ today, onLogout }) {
                 onStart={() => setStatus(q.code, 'in_progress')}
                 onFinish={() => setNotifyFor(q)}
                 onRevert={() => setStatus(q.code, q.status === 'done' ? 'in_progress' : 'waiting')}
+                onDelete={() => remove(q)}
               />
             ))}
           </div>
@@ -247,6 +264,7 @@ function Dashboard({ today, onLogout }) {
                   onStart={() => setStatus(q.code, 'in_progress')}
                   onFinish={() => setNotifyFor(q)}
                   onRevert={() => setStatus(q.code, q.status === 'done' ? 'in_progress' : 'waiting')}
+                  onDelete={() => remove(q)}
                 />
               ))}
             </section>

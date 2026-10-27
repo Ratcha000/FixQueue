@@ -147,6 +147,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .btn-ghost { background: var(--surface-2); color: var(--text); border-color: var(--border); }
 .btn-progress { background: var(--progress); color: #fff; }
 .btn-done { background: var(--done); color: #fff; }
+.btn-danger { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
 .btn-line { background: var(--line); color: #fff; font-size: 1.1rem; }
 .btn-block { width: 100%; }
 .btn-sm { min-height: 38px; padding: 6px 12px; font-size: 0.9rem; }

@@ -101,7 +101,7 @@ export default function BookForm() {
               <input type="email" value={form.problem_email} onChange={set('problem_email')} maxLength={200} required inputMode="email" autoCapitalize="off" />
             </label>
             <label className="field">
-              <span>หัวแฟม *</span>
+              <span>หัวแฟม (อีเมล family)*</span>
               <input value={form.family_name} onChange={set('family_name')} maxLength={100} required />
             </label>
             <div className="field-row">

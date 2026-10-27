@@ -29,6 +29,7 @@ function handle_(req) {
     case 'getRows': return getRows_(req.sheet);
     case 'append': return withLock_(() => append_(req.sheet, req.obj));
     case 'update': return withLock_(() => update_(req.sheet, req.key, req.obj));
+    case 'remove': return withLock_(() => remove_(req.sheet, req.key, req.value));
     case 'replaceAll': return withLock_(() => replaceAll_(req.sheet, req.objs || []));
     case 'archive': return withLock_(() => archive_(req.before));
     default: throw new Error('unknown action: ' + req.action);
@@ -148,6 +149,24 @@ function update_(name, key, obj) {
     for (let i = 0; i < keys.length; i++) {
       if (keys[i][0] === String(obj[key])) {
         writeRows_(sh, i + 2, [toRow_(header, obj)]);
+        return true;
+      }
+    }
+  }
+  throw new Error('not found');
+}
+
+/** ลบแถวที่คอลัมน์ `key` (เช่น code) ตรงกับ value */
+function remove_(name, key, value) {
+  const sh = sheet_(name);
+  const col = header_(sh).indexOf(key);
+  if (col < 0) throw new Error('missing column: ' + key);
+  const last = sh.getLastRow();
+  if (last >= 2) {
+    const keys = sh.getRange(2, col + 1, last - 1, 1).getDisplayValues();
+    for (let i = 0; i < keys.length; i++) {
+      if (keys[i][0] === String(value)) {
+        sh.deleteRow(i + 2);
         return true;
       }
     }
