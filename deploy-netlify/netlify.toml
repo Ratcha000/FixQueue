@@ -1,0 +1,32 @@
+# ตั้ง Base directory ของเว็บใน Netlify เป็น deploy-netlify
+
+[build]
+  # ใช้ package.json เดิมที่ root แล้ว build หน้าเว็บมาไว้ใน deploy-netlify/dist
+  command = "cd .. && npm ci && npx vite build client --outDir ../deploy-netlify/dist --emptyOutDir"
+  publish = "dist"
+  functions = "functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[functions]
+  node_bundler = "esbuild"
+
+# API ทั้งหมดวิ่งไปที่ function เดียว (Express เดิม)
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+# ให้ React Router จัดการทุกหน้า (refresh ที่ /admin, /book ได้)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# หน้าแอดมินไม่ให้ search engine เก็บ
+[[headers]]
+  for = "/admin*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
