@@ -4,7 +4,7 @@
 const QUEUE_HEADERS = [
   'code', 'pin', 'seq', 'date', 'app', 'problem',
   'line_name', 'problem_email', 'family_name', 'notify_email', 'bill_due', 'billing_cycle',
-  'detail', 'status', 'created_at', 'updated_at',
+  'detail', 'status', 'created_at', 'updated_at', 'handled',
 ];
 
 export const HEADERS = {

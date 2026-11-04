@@ -163,7 +163,7 @@ const MAX = {
   problem_email: 200, family_name: 100, notify_email: 200,
   bill_due: 10, billing_cycle: 50, detail: 2000,
 };
-const REQUIRED = ['line_name', 'problem_email', 'family_name', 'bill_due', 'billing_cycle'];
+const REQUIRED = ['problem_email', 'family_name', 'bill_due'];
 const EMAIL_LABEL = { problem_email: 'อีเมลที่มีปัญหา', notify_email: 'อีเมลลูกค้า' };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -262,6 +262,31 @@ export async function findByPin(pin) {
   };
 }
 
+// ---------- คิววันนี้ (สาธารณะ) ----------
+/** first.user@gmail.com -> fi******er@gmail.com (ชื่อสั้นไม่เกิน 4 ตัว แสดงน้อยลงเพื่อไม่ให้เห็นครบ) */
+function maskEmailEnds(email) {
+  const [user, domain] = email.split('@');
+  if (!domain) return '';
+  const head = user.length > 4 ? 2 : Math.floor(user.length / 2);
+  const tail = user.length > 4 ? 2 : 0;
+  return `${user.slice(0, head)}${'*'.repeat(user.length - head - tail)}${user.slice(user.length - tail)}@${domain}`;
+}
+
+/** ส่งเฉพาะลำดับ อีเมลที่เซนเซอร์แล้ว และสถานะ ห้ามส่ง code เพราะมี PIN ที่ใช้เปิดข้อมูลคิวได้ */
+export async function getTodayQueues() {
+  const date = todayStr();
+  const rows = await store.getRows('Queues');
+  const queues = rows
+    .filter((r) => r.date === date)
+    .sort((a, b) => (parseInt(a.seq, 10) || 0) - (parseInt(b.seq, 10) || 0))
+    .map((r) => ({
+      label: `A${String(parseInt(r.seq, 10) || 0).padStart(2, '0')}`,
+      email: maskEmailEnds(r.problem_email),
+      status: r.status,
+    }));
+  return { date, queues };
+}
+
 // ---------- แอดมิน ----------
 export async function listByDate(date) {
   if (!isValidDate(date)) throw new HttpError(400, 'วันที่ไม่ถูกต้อง');
@@ -297,6 +322,35 @@ export async function updateStatus(code, status) {
     const q = rows.find((r) => r.code === code);
     if (!q) throw new HttpError(404, 'ไม่พบคิวนี้');
     const updated = { ...q, status, updated_at: nowStr() };
+    await store.update('Queues', updated);
+    return updated;
+  });
+}
+
+/** ติ๊กว่าแอดมินทำงานของคิวนี้แล้ว ใช้ภายในหลังบ้าน จึงไม่แตะ updated_at ที่ลูกค้าเห็น */
+export async function updateHandled(code, handled) {
+  if (typeof handled !== 'boolean') throw new HttpError(400, 'ค่าไม่ถูกต้อง');
+  return withLock(async () => {
+    const rows = await store.getRows('Queues', { fresh: true });
+    const q = rows.find((r) => r.code === code);
+    if (!q) throw new HttpError(404, 'ไม่พบคิวนี้');
+    const updated = { ...q, handled: handled ? '1' : '' };
+    await store.update('Queues', updated);
+    return updated;
+  });
+}
+
+/** แอดมินแก้อีเมลที่มีปัญหาและหัวแฟม */
+export async function updateDetails(code, input) {
+  const problem_email = clean(input?.problem_email, MAX.problem_email);
+  const family_name = clean(input?.family_name, MAX.family_name);
+  if (!problem_email || !family_name) throw new HttpError(400, 'กรุณากรอกอีเมลที่มีปัญหาและหัวแฟม');
+  if (!EMAIL_RE.test(problem_email)) throw new HttpError(400, 'รูปแบบอีเมลที่มีปัญหาไม่ถูกต้อง');
+  return withLock(async () => {
+    const rows = await store.getRows('Queues', { fresh: true });
+    const q = rows.find((r) => r.code === code);
+    if (!q) throw new HttpError(404, 'ไม่พบคิวนี้');
+    const updated = { ...q, problem_email, family_name, updated_at: nowStr() };
     await store.update('Queues', updated);
     return updated;
   });

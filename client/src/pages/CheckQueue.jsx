@@ -70,10 +70,10 @@ export default function CheckQueue() {
             {result.app && (<><dt>แอป</dt><dd>{result.app}</dd></>)}
             {result.problem && (<><dt>ปัญหา</dt><dd>{result.problem}</dd></>)}
             {result.detail && (<><dt>รายละเอียด</dt><dd className="pre">{result.detail}</dd></>)}
-            <dt>ชื่อ LINE</dt><dd>{result.line_name}</dd>
+            {result.line_name && (<><dt>ชื่อ LINE</dt><dd>{result.line_name}</dd></>)}
             <dt>อีเมลที่มีปัญหา</dt><dd className="break">{result.problem_email}</dd>
             <dt>วันหมดรอบบิล</dt><dd>{thaiDate(result.bill_due)}</dd>
-            <dt>รอบเดือน</dt><dd>{result.billing_cycle}</dd>
+            {result.billing_cycle && (<><dt>รอบเดือน</dt><dd>{result.billing_cycle}</dd></>)}
             <dt>อัปเดตล่าสุด</dt><dd>{thaiDateTime(result.updated_at)}</dd>
           </dl>
         </div>

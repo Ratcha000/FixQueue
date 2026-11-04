@@ -46,12 +46,9 @@ export default function BookSuccess() {
         {q.app && (<><dt>แอป</dt><dd>{q.app}</dd></>)}
         {q.problem && (<><dt>ปัญหา</dt><dd>{q.problem}</dd></>)}
         {q.detail && (<><dt>รายละเอียด</dt><dd className="pre">{q.detail}</dd></>)}
-        <dt>ชื่อ LINE</dt><dd>{q.line_name}</dd>
         <dt>อีเมลที่มีปัญหา</dt><dd className="break">{q.problem_email}</dd>
         <dt>ชื่อ family</dt><dd>{q.family_name}</dd>
-        {q.notify_email && (<><dt>อีเมลลูกค้า</dt><dd className="break">{q.notify_email}</dd></>)}
         <dt>วันหมดรอบบิล</dt><dd>{thaiDate(q.bill_due)}</dd>
-        <dt>รอบเดือน</dt><dd>{q.billing_cycle}</dd>
       </dl>
 
       <div className="btn-row">

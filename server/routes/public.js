@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import {
-  getOptions, getCalendar, getAvailableDates, getTodaySummary, createQueue, findByPin, getSettings,
+  getOptions, getCalendar, getAvailableDates, getTodaySummary, getTodayQueues, createQueue, findByPin, getSettings,
 } from '../queue.js';
 import { thisMonth } from '../time.js';
 
@@ -33,6 +33,10 @@ router.get('/available-dates', async (req, res) => {
 
 router.get('/today', async (req, res) => {
   res.json(await getTodaySummary());
+});
+
+router.get('/today/queues', async (req, res) => {
+  res.json(await getTodayQueues());
 });
 
 router.post('/queue', bookLimiter, async (req, res) => {

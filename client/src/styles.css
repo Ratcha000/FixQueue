@@ -1,13 +1,13 @@
 :root {
-  --bg: #ffffff;
+  --bg: #fefbfc;
   --surface: #ffffff;
-  --surface-2: #f6f7f7;
-  --border: #e5e7e7;
-  --text: #17201d;
-  --muted: #5d6b66;
-  --primary: #0f766e;
+  --surface-2: #fdf0f7;
+  --border: #f6dbe9;
+  --text: #2b1722;
+  --muted: #75596a;
+  --primary: #f184b7;
   --primary-ink: #ffffff;
-  --primary-soft: #e0f2ef;
+  --primary-soft: #fde7f3;
   --waiting: #b45309;
   --waiting-soft: #fef3c7;
   --progress: #1d4ed8;
@@ -301,7 +301,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   box-shadow: var(--shadow);
 }
 .menu-btn:hover { border-color: var(--primary); }
-.menu-primary { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+.menu-primary { grid-column: 1 / -1; background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
 /* ไอคอนจาก client/public ใช้เป็น mask เพื่อให้เปลี่ยนสีตามตัวอักษรได้ */
 .icon {
   display: inline-block;
@@ -398,8 +398,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .form-section legend { font-weight: 600; padding: 0 6px; color: var(--primary); }
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field > span { font-weight: 500; font-size: 0.95rem; }
-.field-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
-@media (max-width: 479px) { .field-row { grid-template-columns: minmax(0, 1fr); } }
 input, select, textarea {
   width: 100%;
   min-height: 46px;
@@ -456,7 +454,41 @@ input[readonly] { background: var(--surface-2); }
 
 .contact-icon { display: block; width: 56px; height: 56px; color: var(--primary); margin: 8px auto; }
 
+/* ---------- ฟอร์มและคิววันนี้ (หน้าหลัก) ---------- */
+.home-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+.home-grid .card { margin: 0; }
+.home-grid .form-card { max-width: none; }
+.today-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 12px 0; }
+.today-tabs .tab { color: var(--text); white-space: normal; padding: 6px; }
+.today-empty { text-align: center; margin: 20px 0 8px; }
+.today-list { list-style: none; margin: 0; padding: 0; }
+.today-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+.today-label { font-weight: 700; }
+.today-email { overflow-wrap: anywhere; font-size: 0.9rem; }
+
 /* ---------- Admin ---------- */
+/* สีสถานะเฉพาะหน้าแอดมิน: รอแก้ไขเหลือง กำลังแก้ไขแดง เสร็จแล้วเขียว (หน้าลูกค้าใช้สีเดิม) */
+.admin {
+  --waiting: #854d0e;
+  --waiting-soft: #fef08a;
+  --progress: #b91c1c;
+  --progress-soft: #fee2e2;
+}
+.admin .qcard-waiting { border-left-color: #eab308; }
+.admin .btn-progress { background: #1d4ed8; } /* คงสีน้ำเงิน ไม่ให้ปนกับปุ่มลบสีแดง */
+.admin-tabs .tab-waiting { background: var(--waiting-soft); color: var(--waiting); border-color: #eab308; }
+.admin-tabs .tab-in_progress { background: var(--progress-soft); color: var(--progress); border-color: var(--progress); }
+.admin-tabs .tab-done { background: var(--done-soft); color: var(--done); border-color: var(--done); }
+.admin-tabs .tab.is-active.tab-waiting { background: #facc15; color: #422006; border-color: #facc15; }
+.admin-tabs .tab.is-active.tab-in_progress { background: var(--progress); color: #fff; border-color: var(--progress); }
+.admin-tabs .tab.is-active.tab-done { background: var(--done); color: #fff; border-color: var(--done); }
 .login-card { max-width: 400px; margin-top: 10vh; }
 .admin-head { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
 .admin-head p { margin: 0; }
@@ -491,11 +523,52 @@ input[readonly] { background: var(--surface-2); }
 .qcard-badges { display: inline-flex; gap: 6px; flex-wrap: wrap; }
 .qcard-date { margin: 6px 0 0; font-weight: 600; color: var(--primary); font-size: 0.92rem; }
 .badge-archived { background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
-.board { display: grid; gap: 16px; }
-.board > * { min-width: 0; }
-.column { display: none; }
-.column.is-active { display: block; }
-.column-title { display: none; }
+.row-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: -6px 0 -6px 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  vertical-align: middle;
+}
+.row-icon-btn:hover { background: var(--surface-2); color: var(--text); }
+.row-icon-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* แถวคิวแนวนอน (สถานะกำลังแก้ไข) มือถือเรียงเป็นบล็อก จอใหญ่เรียงเป็นคอลัมน์ */
+.qrows { display: flex; flex-direction: column; gap: 8px; }
+.qrow-grid.qrows-head { display: none; }
+.qrow-icons { display: inline-flex; vertical-align: middle; white-space: nowrap; }
+.qrow {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--progress);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.qrow.is-editing { background: var(--primary-soft); }
+.qrow-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.qrow-cell { display: flex; flex-direction: column; min-width: 0; font-size: 0.92rem; }
+.qrow-cell input { width: 100%; min-width: 0; min-height: 40px; padding: 6px 10px; }
+.qrow-label { font-size: 0.8rem; color: var(--muted); }
+.qrow-code { font-weight: 700; overflow-wrap: anywhere; }
+.qrow-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.qrow-actions .btn { flex: 1 1 auto; white-space: nowrap; }
+.qrow-error { margin: 8px 0 0; color: var(--danger); font-size: 0.9rem; font-weight: 600; }
+.qrow-note { margin: 8px 0 0; }
 .empty { text-align: center; padding: 24px 0; }
 
 .qcard {
@@ -511,6 +584,26 @@ input[readonly] { background: var(--surface-2); }
 .qcard-done { border-left-color: var(--done); }
 .qcard-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .qcode { font-weight: 700; font-size: 1.05rem; }
+.qcard-handled {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  margin-top: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.qcard-handled input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  flex: none;
+  accent-color: var(--done);
+  cursor: inherit;
+}
+.qcard-handled:has(input:disabled) { cursor: default; color: var(--muted); }
+.qcard.is-handled .qcard-meta { opacity: 0.6; }
+.qcard.is-handled .qcard-handled { color: var(--done); }
 .qcard-title { margin: 8px 0 4px; }
 .qcard-detail { margin: 0 0 8px; padding: 8px 10px; background: var(--surface-2); border-radius: 8px; font-size: 0.92rem; }
 .qcard-meta { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 8px 0; font-size: 0.9rem; }
@@ -534,44 +627,13 @@ input[readonly] { background: var(--surface-2); }
 }
 .chip button { border: 0; background: transparent; cursor: pointer; color: var(--muted); width: 28px; height: 28px; }
 
-/* ---------- Modal ---------- */
-.modal-backdrop {
-  position: fixed; inset: 0;
-  background: rgb(0 0 0 / 0.45);
-  display: flex; align-items: flex-end; justify-content: center;
-  z-index: 50;
-}
-.modal {
-  background: var(--surface);
-  width: 100%;
-  max-height: 92vh;
-  overflow-y: auto;
-  border-radius: 18px 18px 0 0;
-  padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
-}
-.modal-actions { display: flex; flex-direction: column-reverse; gap: 8px; margin-top: 12px; }
-
-/* ---------- ป๊อปอัป "ก่อนลงคิว อ่านก่อนนะ" ---------- */
-.rules-modal { max-width: 440px; }
-.rules-title { font-size: 1.6rem; color: var(--primary); margin: 4px 0 12px; }
-.rules-list { margin: 0 0 16px; padding-left: 1.6em; font-size: 1.1rem; line-height: 1.75; }
-.rules-hl { color: var(--danger); }
-.rules-note {
-  margin: 0 0 16px;
-  padding: 14px 16px;
-  border-radius: 12px;
-  background: var(--primary-soft);
-  color: var(--primary);
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-.rules-btn { min-height: 54px; font-size: 1.15rem; border-radius: 14px; }
-
 /* ---------- Tablet (iPad) ---------- */
 @media (min-width: 768px) {
   .container { padding: 24px 24px 40px; }
   .hero h1 { font-size: 2rem; }
-  .menu-grid { grid-template-columns: repeat(4, 1fr); }
+  .menu-grid { grid-template-columns: repeat(3, 1fr); }
+  .menu-primary { grid-column: auto; }
+  .home-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cal-grid { gap: 6px; }
   .cal-badge { font-size: 0.78rem; }
   .cal-badge .long { display: inline; }
@@ -582,9 +644,6 @@ input[readonly] { background: var(--surface-2); }
   .admin-tools input[type="date"] { flex: 0 0 auto; }
   .settings-grid { grid-template-columns: 1fr 1fr; }
   .settings-grid .span-2 { grid-column: span 2; }
-  .modal-backdrop { align-items: center; padding: 24px; }
-  .modal { max-width: 600px; border-radius: 18px; padding: 24px; }
-  .modal-actions { flex-direction: row; justify-content: flex-end; }
   .qcard-actions .btn { flex: 0 0 auto; }
   .results-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
   .footer-inner { flex-direction: row; align-items: center; justify-content: space-between; }
@@ -593,19 +652,13 @@ input[readonly] { background: var(--surface-2); }
 
 /* ---------- Desktop ---------- */
 @media (min-width: 1024px) {
-  .admin-tabs { display: none; }
-  .board { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
-  .column, .column.is-active { display: block; }
-  .column {
-    background: var(--surface-2);
-    border-radius: var(--radius);
-    padding: 12px;
-    min-height: 200px;
-  }
-  .column-title { display: flex; align-items: center; gap: 8px; font-size: 1rem; margin: 4px 4px 12px; }
-  .column-waiting .column-title { color: var(--waiting); }
-  .column-in_progress .column-title { color: var(--progress); }
-  .column-done .column-title { color: var(--done); }
-  .count { background: var(--surface); border-radius: 999px; padding: 0 10px; font-size: 0.85rem; }
   .qcard-actions .btn { flex: 1 1 auto; }
+  .qrow-grid {
+    grid-template-columns: 158px minmax(0, 1.3fr) minmax(0, 1.1fr) 110px 60px 232px;
+    gap: 12px;
+    align-items: center;
+  }
+  .qrow-grid.qrows-head { display: grid; padding: 0 18px; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+  .qrow-label { display: none; }
+  .qrow-actions { flex-wrap: nowrap; justify-content: flex-end; }
 }

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { checkPassword, setSession, clearSession, requireAdmin } from '../auth.js';
-import { listByDate, searchByEmail, updateStatus, deleteQueue, getSettings, saveSettings, archiveOld, archiveOldDaily, ARCHIVE_AFTER_DAYS } from '../queue.js';
+import { listByDate, searchByEmail, updateStatus, updateDetails, updateHandled, deleteQueue, getSettings, saveSettings, archiveOld, archiveOldDaily, ARCHIVE_AFTER_DAYS } from '../queue.js';
 import { todayStr } from '../time.js';
 
 const router = Router();
@@ -46,6 +46,14 @@ router.get('/search', async (req, res) => {
 
 router.patch('/queues/:code', async (req, res) => {
   res.json(await updateStatus(req.params.code, req.body?.status));
+});
+
+router.patch('/queues/:code/details', async (req, res) => {
+  res.json(await updateDetails(req.params.code, req.body));
+});
+
+router.patch('/queues/:code/handled', async (req, res) => {
+  res.json(await updateHandled(req.params.code, req.body?.handled));
 });
 
 router.delete('/queues/:code', async (req, res) => {

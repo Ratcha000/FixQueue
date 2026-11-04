@@ -2,12 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { STATUS_LABEL, thaiDate } from '../format.js';
 import QueueCard from '../components/QueueCard.jsx';
-import NotifyModal from '../components/NotifyModal.jsx';
+import QueueRow, { QueueRowsHead } from '../components/QueueRow.jsx';
+import { openNotifyEmail } from '../notifyEmail.js';
 import SettingsPanel from '../components/SettingsPanel.jsx';
 import ErrorAlert from '../components/ErrorAlert.jsx';
 import Loader, { LoadingOverlay } from '../components/Loader.jsx';
 
-const COLUMNS = ['waiting', 'in_progress', 'done'];
+const STATUS_TABS = ['waiting', 'in_progress', 'done'];
 
 function useNoIndex() {
   useEffect(() => {
@@ -86,8 +87,7 @@ function Dashboard({ today, onLogout }) {
   const [queues, setQueues] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(''); // code ที่กำลังอัปเดต
-  const [notifyFor, setNotifyFor] = useState(null);
-  const [tab, setTab] = useState('waiting'); // ใช้บนมือถือ
+  const [tab, setTab] = useState('waiting'); // สถานะที่กำลังแสดง
   const [showSettings, setShowSettings] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [results, setResults] = useState(null); // null = ไม่ได้ค้นหา
@@ -123,6 +123,37 @@ function Dashboard({ today, onLogout }) {
       else alert(err.message);
     } finally {
       setBusy('');
+    }
+  };
+
+  /** อัปเดตหน้าจอก่อน แล้วบันทึกเบื้องหลัง ถ้าไม่สำเร็จค่อยย้อนค่า */
+  const setHandled = async (code, handled) => {
+    const apply = (value) => {
+      const swap = (list) => list && list.map((q) => (q.code === code ? { ...q, handled: value } : q));
+      setQueues(swap);
+      setResults(swap);
+    };
+    apply(handled ? '1' : '');
+    try {
+      const updated = await api.patch(`/api/admin/queues/${encodeURIComponent(code)}/handled`, { handled });
+      apply(updated.handled);
+    } catch (err) {
+      apply(handled ? '' : '1');
+      if (err.status === 401) onLogout();
+      else alert(err.message);
+    }
+  };
+
+  /** ส่ง error ต่อให้แถวแสดงเอง ยกเว้น session หมดอายุ */
+  const saveDetails = async (code, details) => {
+    try {
+      const updated = await api.patch(`/api/admin/queues/${encodeURIComponent(code)}/details`, details);
+      const swap = (list) => list && list.map((q) => (q.code === code ? { ...q, ...updated } : q));
+      setQueues(swap);
+      setResults(swap);
+    } catch (err) {
+      if (err.status === 401) onLogout();
+      throw err;
     }
   };
 
@@ -167,7 +198,7 @@ function Dashboard({ today, onLogout }) {
     onLogout();
   };
 
-  const grouped = Object.fromEntries(COLUMNS.map((s) => [s, (queues || []).filter((q) => q.status === s)]));
+  const grouped = Object.fromEntries(STATUS_TABS.map((s) => [s, (queues || []).filter((q) => q.status === s)]));
 
   return (
     <div className="admin">
@@ -220,8 +251,10 @@ function Dashboard({ today, onLogout }) {
                 showDate
                 busy={busy === q.code}
                 onStart={() => setStatus(q.code, 'in_progress')}
-                onFinish={() => setNotifyFor(q)}
-                onRevert={() => setStatus(q.code, q.status === 'done' ? 'in_progress' : 'waiting')}
+                onFinish={() => setStatus(q.code, 'done')}
+                onNotify={() => openNotifyEmail(q)}
+                onHandled={(handled) => setHandled(q.code, handled)}
+                onRevert={() => setStatus(q.code, 'waiting')}
                 onDelete={() => remove(q)}
               />
             ))}
@@ -232,7 +265,7 @@ function Dashboard({ today, onLogout }) {
       <ErrorAlert error={error} />
 
       <div className="admin-tabs" role="tablist">
-        {COLUMNS.map((s) => (
+        {STATUS_TABS.map((s) => (
           <button
             key={s}
             type="button"
@@ -241,48 +274,45 @@ function Dashboard({ today, onLogout }) {
             className={`tab tab-${s}${tab === s ? ' is-active' : ''}`}
             onClick={() => setTab(s)}
           >
-            {STATUS_LABEL[s]} <b>{grouped[s].length}</b>
+            {STATUS_LABEL[s]} {queues && <b>{grouped[s].length}</b>}
           </button>
         ))}
       </div>
 
       {queues === null ? (
         <Loader label="กำลังโหลดรายการคิว…" />
+      ) : grouped[tab].length === 0 ? (
+        <p className="muted empty">ไม่มีรายการ</p>
+      ) : tab === 'in_progress' ? (
+        <div className="qrows">
+          <QueueRowsHead />
+          {grouped.in_progress.map((q) => (
+            <QueueRow
+              key={q.code}
+              queue={q}
+              busy={busy === q.code}
+              onFinish={() => setStatus(q.code, 'done')}
+              onRevert={() => setStatus(q.code, 'waiting')}
+              onSave={(details) => saveDetails(q.code, details)}
+            />
+          ))}
+        </div>
       ) : (
-        <div className="board">
-          {COLUMNS.map((s) => (
-            <section key={s} className={`column column-${s}${tab === s ? ' is-active' : ''}`}>
-              <h2 className="column-title">
-                {STATUS_LABEL[s]} <span className="count">{grouped[s].length}</span>
-              </h2>
-              {grouped[s].length === 0 && <p className="muted empty">ไม่มีรายการ</p>}
-              {grouped[s].map((q) => (
-                <QueueCard
-                  key={q.code}
-                  queue={q}
-                  busy={busy === q.code}
-                  onStart={() => setStatus(q.code, 'in_progress')}
-                  onFinish={() => setNotifyFor(q)}
-                  onRevert={() => setStatus(q.code, q.status === 'done' ? 'in_progress' : 'waiting')}
-                  onDelete={() => remove(q)}
-                />
-              ))}
-            </section>
+        <div className="results-grid">
+          {grouped[tab].map((q) => (
+            <QueueCard
+              key={q.code}
+              queue={q}
+              busy={busy === q.code}
+              onStart={() => setStatus(q.code, 'in_progress')}
+              onNotify={() => openNotifyEmail(q)}
+              onHandled={(handled) => setHandled(q.code, handled)}
+              onDelete={() => remove(q)}
+            />
           ))}
         </div>
       )}
       </>)}
-
-      {notifyFor && (
-        <NotifyModal
-          queue={notifyFor}
-          onClose={() => setNotifyFor(null)}
-          onSent={() => {
-            if (notifyFor.status !== 'done') setStatus(notifyFor.code, 'done');
-            setNotifyFor(null);
-          }}
-        />
-      )}
     </div>
   );
 }
