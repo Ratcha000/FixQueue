@@ -31,11 +31,11 @@ export default function AnnouncementEditor({ value, onChange }) {
       <div className="settings-grid">
         <label className="field">
           <span>หัวกล่อง</span>
-          <input maxLength={TEXT_MAX} value={heading.title} onChange={(e) => set({ heading: { ...heading, title: e.target.value } })} placeholder="ประกาศจากแอดมิน" />
+          <input maxLength={TEXT_MAX} value={heading.title} onChange={(e) => set({ heading: { ...heading, title: e.target.value } })} placeholder="ระบบจองคิวแอพดี" />
         </label>
         <label className="field">
           <span>คำโปรย</span>
-          <input maxLength={TEXT_MAX} value={heading.subtitle} onChange={(e) => set({ heading: { ...heading, subtitle: e.target.value } })} placeholder="กรุณาอ่านก่อนลงคิวนะคะ" />
+          <input maxLength={TEXT_MAX} value={heading.subtitle} onChange={(e) => set({ heading: { ...heading, subtitle: e.target.value } })} placeholder="ประกาศและเวลาทำการแอดมินแก้ไข" />
         </label>
       </div>
 

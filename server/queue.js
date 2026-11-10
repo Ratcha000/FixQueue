@@ -24,7 +24,7 @@ export const MAX_ANNOUNCEMENTS = 3; // การ์ดชมพูสูงส�
 const ANN_TEXT_MAX = 200;
 const ANN_ROWS_MAX = 4;
 
-const DEFAULT_HEADING = { title: 'ประกาศจากแอดมิน', subtitle: 'กรุณาอ่านก่อนลงคิวนะคะ' };
+const DEFAULT_HEADING = { title: 'ระบบจองคิวแอพดี', subtitle: 'ประกาศและเวลาทำการแอดมินแก้ไข' };
 const DEFAULT_TIME = { show: false, badge: 'เวลาเริ่มแก้ไข', time: '16.00 น.', desc: 'แอดมินเริ่มแก้ไขตามลำดับคิว', rows: [] };
 
 const txt = (v, fallback = '') => (typeof v === 'string' ? v.trim().slice(0, ANN_TEXT_MAX) : fallback);

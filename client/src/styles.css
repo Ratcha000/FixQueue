@@ -311,7 +311,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   margin: 4px 0 0;
   font-family: 'Kanit', 'Noto Sans Thai', sans-serif;
   font-weight: 700;
-  font-size: clamp(1.35rem, 4.5vw, 1.75rem);
+  font-size: 1rem; /* 16px ทุกขนาดจอ */
   line-height: 1.25;
   color: #1c1117;
   word-break: break-word;
@@ -320,11 +320,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
   margin: 0;
   font-family: 'Kanit', 'Noto Sans Thai', sans-serif;
   font-weight: 700;
-  font-size: clamp(2.2rem, 8vw, 3rem);
+  font-size: 40px; /* 40px ทุกขนาดจอ */
   line-height: 1.1;
   color: var(--c);
 }
-.ann-desc { margin: 0; font-size: 0.85rem; color: var(--muted); word-break: break-word; }
+.ann-desc { margin: 0; font-size: 0.85rem; font-weight: 700; color: var(--muted); word-break: break-word; }
 .ann-rows { list-style: none; margin: 4px 0 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 8px; }
 .ann-rows li {
   display: flex;
