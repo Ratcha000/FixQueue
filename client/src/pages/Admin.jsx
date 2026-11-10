@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../api.js';
 import { STATUS_LABEL, thaiDate } from '../format.js';
 import QueueCard from '../components/QueueCard.jsx';
@@ -94,13 +94,21 @@ function Dashboard({ today, onLogout }) {
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState(null);
 
+  // นับทุกครั้งที่โหลดหรือแก้ข้อมูล: ผลโหลดที่เริ่มก่อนการแก้ไขล่าสุด (หรือของวันเก่า) จะถูกทิ้ง
+  // กันกรณีกดเปลี่ยนสถานะเร็วๆ แล้วรายการเด้งกลับเป็นสถานะเดิม
+  const stamp = useRef(0);
+  const handledReq = useRef({}); // code -> เลขคำขอล่าสุดของช่อง "ทำแล้ว"
+
   const load = useCallback(async () => {
+    const mine = ++stamp.current;
     try {
-      setQueues(await api.get(`/api/admin/queues?date=${date}`));
+      const list = await api.get(`/api/admin/queues?date=${date}`);
+      if (mine !== stamp.current) return;
+      setQueues(list);
       setError(null);
     } catch (err) {
       if (err.status === 401) onLogout();
-      else setError(err);
+      else if (mine === stamp.current) setError(err);
     }
   }, [date, onLogout]);
 
@@ -113,6 +121,7 @@ function Dashboard({ today, onLogout }) {
 
   const setStatus = async (code, status) => {
     setBusy(code);
+    stamp.current++;
     try {
       const updated = await api.patch(`/api/admin/queues/${encodeURIComponent(code)}`, { status });
       const swap = (list) => list && list.map((q) => (q.code === code ? { ...q, ...updated } : q));
@@ -134,11 +143,15 @@ function Dashboard({ today, onLogout }) {
       setResults(swap);
     };
     apply(handled ? '1' : '');
+    stamp.current++;
+    const req = (handledReq.current[code] || 0) + 1;
+    handledReq.current[code] = req;
+    const latest = () => handledReq.current[code] === req; // ติ๊กรัวๆ: ใช้ผลของคำขอล่าสุดเท่านั้น
     try {
       const updated = await api.patch(`/api/admin/queues/${encodeURIComponent(code)}/handled`, { handled });
-      apply(updated.handled);
+      if (latest()) apply(updated.handled);
     } catch (err) {
-      apply(handled ? '' : '1');
+      if (latest()) apply(handled ? '' : '1');
       if (err.status === 401) onLogout();
       else alert(err.message);
     }
@@ -146,6 +159,7 @@ function Dashboard({ today, onLogout }) {
 
   /** ส่ง error ต่อให้แถวแสดงเอง ยกเว้น session หมดอายุ */
   const saveDetails = async (code, details) => {
+    stamp.current++;
     try {
       const updated = await api.patch(`/api/admin/queues/${encodeURIComponent(code)}/details`, details);
       const swap = (list) => list && list.map((q) => (q.code === code ? { ...q, ...updated } : q));
@@ -160,6 +174,7 @@ function Dashboard({ today, onLogout }) {
   const remove = async (q) => {
     if (!window.confirm(`ลบคิว ${q.code} (${q.line_name || q.problem_email}) ใช่ไหม?\nลบแล้วกู้คืนจากหน้าเว็บไม่ได้`)) return;
     setBusy(q.code);
+    stamp.current++;
     try {
       await api.del(`/api/admin/queues/${encodeURIComponent(q.code)}`);
       const drop = (list) => list && list.filter((x) => x.archived || x.code !== q.code);
@@ -294,6 +309,7 @@ function Dashboard({ today, onLogout }) {
               onFinish={() => setStatus(q.code, 'done')}
               onRevert={() => setStatus(q.code, 'waiting')}
               onSave={(details) => saveDetails(q.code, details)}
+              onDelete={() => remove(q)}
             />
           ))}
         </div>

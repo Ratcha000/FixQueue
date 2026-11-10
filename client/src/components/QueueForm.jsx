@@ -5,6 +5,16 @@ import { thaiDate } from '../format.js';
 import ErrorAlert from './ErrorAlert.jsx';
 import Loader, { LoadingOverlay } from './Loader.jsx';
 
+const GMAIL_RE = /^[a-z0-9][a-z0-9.+]*@gmail\.com$/i;
+const GMAIL_MSG = 'ต้องเป็นอีเมล @gmail.com เช่น example@gmail.com';
+
+/** จัดรูปอีเมล: ตัดช่องว่าง ตัวเล็ก และเติม @gmail.com ให้ถ้าลืมใส่ @ */
+function normalizeGmail(v) {
+  const t = v.replace(/\s+/g, '').toLowerCase();
+  if (t && !t.includes('@')) return `${t}@gmail.com`;
+  return t;
+}
+
 /** ฟอร์มลงคิว ใช้ทั้งหน้า /book และหน้าหลัก (embedded = ฝังในหน้าหลัก) */
 export default function QueueForm({ embedded = false }) {
   const navigate = useNavigate();
@@ -27,6 +37,15 @@ export default function QueueForm({ embedded = false }) {
       .catch(setLoadError);
   }, []);
 
+  const [touched, setTouched] = useState({});
+  const gmailError = (key) => (touched[key] && form[key] && !GMAIL_RE.test(form[key]) ? GMAIL_MSG : '');
+
+  // ออกจากช่องอีเมล: จัดรูปให้ และเริ่มแสดงข้อความเตือนถ้ายังผิด
+  const blurGmail = (key) => () => {
+    setForm((f) => ({ ...f, [key]: normalizeGmail(f[key]) }));
+    setTouched((t) => ({ ...t, [key]: true }));
+  };
+
   const set = (key) => (e) => {
     const value = e.target.value;
     setForm((f) => ({ ...f, [key]: value }));
@@ -35,13 +54,21 @@ export default function QueueForm({ embedded = false }) {
   const submit = async (e) => {
     e.preventDefault();
     if (submitting) return;
+    const problem_email = normalizeGmail(form.problem_email);
+    const family_name = normalizeGmail(form.family_name);
+    setForm((f) => ({ ...f, problem_email, family_name }));
+    setTouched({ problem_email: true, family_name: true });
+    if (!GMAIL_RE.test(problem_email) || !GMAIL_RE.test(family_name)) {
+      setError({ message: `อีเมลที่มีปัญหาและหัวแฟม${GMAIL_MSG}` });
+      return;
+    }
     setError(null);
     setSubmitting(true);
     try {
       const result = await api.post('/api/queue', {
         date: form.date,
-        problem_email: form.problem_email,
-        family_name: form.family_name,
+        problem_email,
+        family_name,
         bill_due: form.bill_due,
       });
       try { sessionStorage.setItem('lastQueue', JSON.stringify(result)); } catch { /* ไม่เป็นไร */ }
@@ -89,12 +116,17 @@ export default function QueueForm({ embedded = false }) {
             <legend>ข้อมูลติดต่อ</legend>
             <label className="field">
               <span>อีเมลที่มีปัญหา *</span>
-              <input type="email" value={form.problem_email} onChange={set('problem_email')} maxLength={200} required inputMode="email" autoCapitalize="off" />
-              <small className="muted">อีเมลที่ใช้กับ YouTube</small>
+              <input type="email" value={form.problem_email} onChange={set('problem_email')} onBlur={blurGmail('problem_email')} maxLength={200} required inputMode="email" autoCapitalize="off" autoCorrect="off" spellCheck={false}  aria-invalid={!!gmailError('problem_email')} />
+              {gmailError('problem_email')
+                ? <small className="field-error">{gmailError('problem_email')}</small>
+                : <small className="muted">อีเมลที่ใช้กับ YouTube </small>}
             </label>
             <label className="field">
               <span>หัวแฟม (อีเมล family)*</span>
-              <input value={form.family_name} onChange={set('family_name')} maxLength={100} required />
+              <input type="email" value={form.family_name} onChange={set('family_name')} onBlur={blurGmail('family_name')} maxLength={100} required inputMode="email" autoCapitalize="off" autoCorrect="off" spellCheck={false} aria-invalid={!!gmailError('family_name')} />
+              {gmailError('family_name')
+                ? <small className="field-error">{gmailError('family_name')}</small>
+                : <small className="muted"></small>}
             </label>
             <label className="field">
               <span>วันหมดรอบบิล *</span>

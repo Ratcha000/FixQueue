@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
-import { thaiDate, thaiDateTime } from '../format.js';
-import StatusBadge from '../components/StatusBadge.jsx';
+import { queueNo, thaiDate, thaiDateTime } from '../format.js';
+import StatusHero from '../components/StatusHero.jsx';
 import ErrorAlert from '../components/ErrorAlert.jsx';
 import { LoadingOverlay } from '../components/Loader.jsx';
 
@@ -55,17 +55,11 @@ export default function CheckQueue() {
 
       {result && (
         <div className="result">
-          <div className="result-head">
-            <span className="mono">{result.code}</span>
-            <StatusBadge status={result.status} />
-          </div>
-          {result.status !== 'done' && (
-            <p className="muted">
-              {result.ahead > 0 ? `มีคิวก่อนหน้าคุณอีก ${result.ahead} คิว` : 'คุณเป็นคิวถัดไป'}
-            </p>
-          )}
+          <StatusHero status={result.status} ahead={result.ahead} />
           <dl className="detail-list">
+            <dt>เลขคิว</dt><dd className="queue-no">{queueNo(result.code)}</dd>
             <dt>วันที่นัด</dt><dd>{thaiDate(result.date, { weekday: true })}</dd>
+            <dt>รหัสคิว</dt><dd className="mono">{result.code}</dd>
             <dt>ลงคิวเมื่อ</dt><dd>{thaiDateTime(result.created_at)}</dd>
             {result.app && (<><dt>แอป</dt><dd>{result.app}</dd></>)}
             {result.problem && (<><dt>ปัญหา</dt><dd>{result.problem}</dd></>)}

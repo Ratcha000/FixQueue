@@ -25,3 +25,18 @@ export async function refreshLineUrl() {
     return getLineUrl();
   }
 }
+
+/**
+ * ลิงก์เปิดแชท LINE ร้านพร้อมข้อความในช่องพิมพ์ (ลูกค้ากดส่งเอง)
+ * ใช้ได้กับ LINE OA ที่ลิงก์มี @ไอดี เช่น https://line.me/R/ti/p/@shop
+ * ถ้าหาไอดีไม่เจอ คืนลิงก์ LINE เดิม (ข้อความจะถูกคัดลอกไว้ให้วางเอง)
+ */
+export function lineMessageUrl(text) {
+  const url = getLineUrl();
+  if (!url) return '';
+  let decoded = url;
+  try { decoded = decodeURIComponent(url); } catch { /* ใช้ค่าเดิม */ }
+  const id = decoded.match(/@[\w.-]+/)?.[0];
+  if (!id) return url;
+  return `https://line.me/R/oaMessage/${encodeURIComponent(id)}/?${encodeURIComponent(text)}`;
+}

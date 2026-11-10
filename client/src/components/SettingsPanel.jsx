@@ -3,13 +3,11 @@ import { api } from '../api.js';
 import { thaiDate } from '../format.js';
 import ErrorAlert from './ErrorAlert.jsx';
 import Loader, { LoadingOverlay } from './Loader.jsx';
-
-const MAX_ANNOUNCEMENTS = 3;
+import AnnouncementEditor from './AnnouncementEditor.jsx';
 
 export default function SettingsPanel({ onClose, onUnauthorized }) {
   const [s, setS] = useState(null);
   const [newClosed, setNewClosed] = useState('');
-  const [newAnn, setNewAnn] = useState('');
   const [capDate, setCapDate] = useState('');
   const [capValue, setCapValue] = useState('');
   const [msg, setMsg] = useState('');
@@ -49,13 +47,6 @@ export default function SettingsPanel({ onClose, onUnauthorized }) {
     } finally {
       setSaving(false);
     }
-  };
-
-  const addAnnouncement = () => {
-    const text = newAnn.trim();
-    if (!text || s.announcements.length >= MAX_ANNOUNCEMENTS) return;
-    setS({ ...s, announcements: [...s.announcements, text] });
-    setNewAnn('');
   };
 
   const addClosed = () => {
@@ -100,28 +91,7 @@ export default function SettingsPanel({ onClose, onUnauthorized }) {
         </label>
       </div>
 
-      <h3>ประกาศ (แสดงด้านบนหน้าลูกค้า สูงสุด {MAX_ANNOUNCEMENTS} ประกาศ)</h3>
-      <div className="inline-add">
-        <textarea
-          rows={2}
-          maxLength={300}
-          value={newAnn}
-          onChange={(e) => setNewAnn(e.target.value)}
-          placeholder={s.announcements.length >= MAX_ANNOUNCEMENTS ? 'ครบ 3 ประกาศแล้ว ลบอันเก่าก่อน' : 'เช่น วันที่ 1 พ.ย. ปิดปรับปรุงระบบ'}
-          disabled={s.announcements.length >= MAX_ANNOUNCEMENTS}
-          style={{ flex: '1 1 240px', minHeight: 0 }}
-        />
-        <button type="button" className="btn btn-sm btn-outline" onClick={addAnnouncement} disabled={!newAnn.trim() || s.announcements.length >= MAX_ANNOUNCEMENTS}>เพิ่ม</button>
-      </div>
-      <div className="ann-list">
-        {s.announcements.length === 0 && <span className="muted small">ไม่มี</span>}
-        {s.announcements.map((text, i) => (
-          <div key={i} className="announcement announcement-admin">
-            <p className="pre">{text}</p>
-            <button type="button" aria-label="ลบประกาศ" onClick={() => setS({ ...s, announcements: s.announcements.filter((_, j) => j !== i) })}>✕</button>
-          </div>
-        ))}
-      </div>
+      <AnnouncementEditor value={s.announcements} onChange={(announcements) => setS({ ...s, announcements })} />
 
       <h3>วันปิดรับคิว</h3>
       <div className="inline-add">

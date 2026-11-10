@@ -20,14 +20,59 @@ function withLock(fn) {
 }
 
 // ---------- Settings ----------
-export const MAX_ANNOUNCEMENTS = 3;
-const ANNOUNCEMENT_MAX_LEN = 300;
+export const MAX_ANNOUNCEMENTS = 3; // การ์ดชมพูสูงสุด
+const ANN_TEXT_MAX = 200;
+const ANN_ROWS_MAX = 4;
 
-function cleanAnnouncements(list) {
+const DEFAULT_HEADING = { title: 'ประกาศจากแอดมิน', subtitle: 'กรุณาอ่านก่อนลงคิวนะคะ' };
+const DEFAULT_TIME = { show: false, badge: 'เวลาเริ่มแก้ไข', time: '16.00 น.', desc: 'แอดมินเริ่มแก้ไขตามลำดับคิว', rows: [] };
+
+const txt = (v, fallback = '') => (typeof v === 'string' ? v.trim().slice(0, ANN_TEXT_MAX) : fallback);
+
+function safeJson(str) {
+  if (typeof str !== 'string' || !str) return undefined;
+  try { return JSON.parse(str); } catch { return undefined; }
+}
+
+function cleanRows(rows) {
+  if (!Array.isArray(rows)) return [];
+  return rows
+    .map((r) => ({ label: txt(r?.label), value: txt(r?.value) }))
+    .filter((r) => r.label || r.value)
+    .slice(0, ANN_ROWS_MAX);
+}
+
+function cleanHeading(h) {
+  if (!h || typeof h !== 'object') return { ...DEFAULT_HEADING };
+  return { title: txt(h.title), subtitle: txt(h.subtitle) };
+}
+
+function cleanPink(list) {
+  if (!Array.isArray(list)) return [];
   return list
-    .map((t) => (typeof t === 'string' ? t.trim().slice(0, ANNOUNCEMENT_MAX_LEN) : ''))
-    .filter(Boolean)
+    .map((c) => ({ badge: txt(c?.badge), title: txt(c?.title), desc: txt(c?.desc), rows: cleanRows(c?.rows) }))
+    .filter((c) => c.badge || c.title || c.desc || c.rows.length)
     .slice(0, MAX_ANNOUNCEMENTS);
+}
+
+function cleanTime(t) {
+  if (!t || typeof t !== 'object') return { ...DEFAULT_TIME };
+  return { show: !!t.show, badge: txt(t.badge), time: txt(t.time), desc: txt(t.desc), rows: cleanRows(t.rows) };
+}
+
+function readAnnouncements(map) {
+  let pink = safeJson(map.announce_pink);
+  if (!Array.isArray(pink)) {
+    // แปลงประกาศแบบเก่า (announcement_1..3) เป็นการ์ดชมพู
+    pink = Array.from({ length: MAX_ANNOUNCEMENTS }, (_, i) => map[`announcement_${i + 1}`])
+      .filter((t) => typeof t === 'string' && t.trim())
+      .map((t) => ({ badge: 'ประกาศ', title: t }));
+  }
+  return {
+    heading: cleanHeading(safeJson(map.announce_heading)),
+    pink: cleanPink(pink),
+    time: cleanTime(safeJson(map.announce_time)),
+  };
 }
 
 export async function getSettings() {
@@ -43,9 +88,7 @@ export async function getSettings() {
     line_url: map.line_url || '',
     closed_dates: (map.closed_dates || '').split(',').map((s) => s.trim()).filter(isValidDate).sort(),
     caps,
-    announcements: cleanAnnouncements(
-      Array.from({ length: MAX_ANNOUNCEMENTS }, (_, i) => map[`announcement_${i + 1}`]),
-    ),
+    announcements: readAnnouncements(map),
   };
 }
 
@@ -59,14 +102,22 @@ export async function saveSettings(input) {
       ? [...new Set(input.closed_dates.filter(isValidDate))].sort()
       : cur.closed_dates,
     caps: input.caps && typeof input.caps === 'object' ? input.caps : cur.caps,
-    announcements: Array.isArray(input.announcements) ? cleanAnnouncements(input.announcements) : cur.announcements,
+    announcements: input.announcements && typeof input.announcements === 'object'
+      ? {
+          heading: cleanHeading(input.announcements.heading),
+          pink: cleanPink(input.announcements.pink),
+          time: cleanTime(input.announcements.time),
+        }
+      : cur.announcements,
   };
   const today = todayStr();
   const rows = [
     { key: 'default_capacity', value: next.default_capacity },
     { key: 'max_days_ahead', value: next.max_days_ahead },
     { key: 'line_url', value: next.line_url },
-    ...next.announcements.map((text, i) => ({ key: `announcement_${i + 1}`, value: text })),
+    { key: 'announce_heading', value: JSON.stringify(next.announcements.heading) },
+    { key: 'announce_pink', value: JSON.stringify(next.announcements.pink) },
+    { key: 'announce_time', value: JSON.stringify(next.announcements.time) },
     // เก็บเฉพาะวันที่ยังไม่ผ่านไป
     { key: 'closed_dates', value: next.closed_dates.filter((d) => d >= today).join(',') },
     ...Object.entries(next.caps)
@@ -166,6 +217,9 @@ const MAX = {
 const REQUIRED = ['problem_email', 'family_name', 'bill_due'];
 const EMAIL_LABEL = { problem_email: 'อีเมลที่มีปัญหา', notify_email: 'อีเมลลูกค้า' };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// ลูกค้าต้องกรอกเป็น Gmail เท่านั้น
+const GMAIL_RE = /^[a-z0-9][a-z0-9.+]*@gmail\.com$/i;
+const GMAIL_FIELDS = { problem_email: 'อีเมลที่มีปัญหา', family_name: 'หัวแฟม' };
 
 function clean(v, max) {
   return typeof v === 'string' ? v.trim().slice(0, max) : '';
@@ -181,6 +235,10 @@ export async function createQueue(input) {
   for (const [k, label] of Object.entries(EMAIL_LABEL)) {
     // ช่องที่ไม่บังคับ (อีเมลลูกค้า) ตรวจเฉพาะเมื่อกรอกมา
     if (data[k] && !EMAIL_RE.test(data[k])) throw new HttpError(400, `รูปแบบ${label}ไม่ถูกต้อง`);
+  }
+  for (const [k, label] of Object.entries(GMAIL_FIELDS)) {
+    data[k] = data[k].toLowerCase();
+    if (!GMAIL_RE.test(data[k])) throw new HttpError(400, `${label}ต้องเป็นอีเมล @gmail.com เช่น example@gmail.com`);
   }
   if (!isValidDate(data.bill_due)) throw new HttpError(400, 'กรุณาเลือกวันหมดรอบบิล');
   if (!isValidDate(date)) throw new HttpError(400, 'กรุณาเลือกวันที่');
@@ -340,17 +398,21 @@ export async function updateHandled(code, handled) {
   });
 }
 
-/** แอดมินแก้อีเมลที่มีปัญหาและหัวแฟม */
+/** แอดมินแก้อีเมลที่มีปัญหา หัวแฟม และวันหมดรอบบิล */
 export async function updateDetails(code, input) {
   const problem_email = clean(input?.problem_email, MAX.problem_email);
   const family_name = clean(input?.family_name, MAX.family_name);
   if (!problem_email || !family_name) throw new HttpError(400, 'กรุณากรอกอีเมลที่มีปัญหาและหัวแฟม');
   if (!EMAIL_RE.test(problem_email)) throw new HttpError(400, 'รูปแบบอีเมลที่มีปัญหาไม่ถูกต้อง');
+  // วันหมดรอบบิล: แก้เฉพาะเมื่อส่งมา
+  const hasBill = input?.bill_due !== undefined;
+  const bill_due = clean(input?.bill_due, MAX.bill_due);
+  if (hasBill && !isValidDate(bill_due)) throw new HttpError(400, 'กรุณาเลือกวันหมดรอบบิล');
   return withLock(async () => {
     const rows = await store.getRows('Queues', { fresh: true });
     const q = rows.find((r) => r.code === code);
     if (!q) throw new HttpError(404, 'ไม่พบคิวนี้');
-    const updated = { ...q, problem_email, family_name, updated_at: nowStr() };
+    const updated = { ...q, problem_email, family_name, ...(hasBill && { bill_due }), updated_at: nowStr() };
     await store.update('Queues', updated);
     return updated;
   });

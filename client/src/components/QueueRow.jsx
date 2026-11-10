@@ -28,17 +28,19 @@ export function QueueRowsHead() {
 }
 
 /** แถวคิวแนวนอนของสถานะ "กำลังแก้ไข" กดดินสอแล้วแก้ข้อมูลในแถวเดิมได้ */
-export default function QueueRow({ queue: q, busy, onFinish, onRevert, onSave }) {
+export default function QueueRow({ queue: q, busy, onFinish, onRevert, onSave, onDelete }) {
   const [draft, setDraft] = useState(null); // null = ไม่ได้แก้ไขอยู่
   const [focusField, setFocusField] = useState('problem_email');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const emailRef = useRef(null);
   const familyRef = useRef(null);
+  const billRef = useRef(null);
   const editing = draft !== null;
 
   useEffect(() => {
-    if (editing) (focusField === 'family_name' ? familyRef : emailRef).current?.focus();
+    const refs = { problem_email: emailRef, family_name: familyRef, bill_due: billRef };
+    if (editing) (refs[focusField] || emailRef).current?.focus();
     // โฟกัสแค่ตอนเปิดแก้ไข ไม่ใช่ทุกครั้งที่พิมพ์
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing]);
@@ -46,7 +48,7 @@ export default function QueueRow({ queue: q, busy, onFinish, onRevert, onSave })
   const startEdit = (field) => {
     setFocusField(field);
     setError('');
-    setDraft({ problem_email: q.problem_email, family_name: q.family_name });
+    setDraft({ problem_email: q.problem_email, family_name: q.family_name, bill_due: q.bill_due || '' });
   };
   const cancel = () => { setDraft(null); setError(''); };
   const set = (key) => (e) => setDraft((d) => ({ ...d, [key]: e.target.value }));
@@ -54,8 +56,8 @@ export default function QueueRow({ queue: q, busy, onFinish, onRevert, onSave })
   const save = async (e) => {
     e.preventDefault();
     if (saving) return;
-    const next = { problem_email: draft.problem_email.trim(), family_name: draft.family_name.trim() };
-    if (next.problem_email === q.problem_email && next.family_name === q.family_name) {
+    const next = { problem_email: draft.problem_email.trim(), family_name: draft.family_name.trim(), bill_due: draft.bill_due };
+    if (next.problem_email === q.problem_email && next.family_name === q.family_name && next.bill_due === (q.bill_due || '')) {
       cancel();
       return;
     }
@@ -71,17 +73,22 @@ export default function QueueRow({ queue: q, busy, onFinish, onRevert, onSave })
     }
   };
 
-  const info = (
-    <>
-      <div className="qrow-cell">
-        <span className="qrow-label">หมดรอบบิล</span>
-        <span>{q.bill_due ? thaiDate(q.bill_due) : '-'}{q.billing_cycle ? ` · ${q.billing_cycle}` : ''}</span>
-      </div>
-      <div className="qrow-cell">
-        <span className="qrow-label">ลงคิว</span>
-        <span>{q.created_at ? `${q.created_at.slice(11, 16)} น.` : '-'}</span>
-      </div>
-    </>
+  const billCell = (
+    <div className="qrow-cell">
+      <span className="qrow-label">หมดรอบบิล</span>
+      <span>
+        {q.bill_due ? thaiDate(q.bill_due) : '-'}{q.billing_cycle ? ` · ${q.billing_cycle}` : ''}
+        <span className="qrow-icons">
+          <EditIconButton label="วันหมดรอบบิล" onClick={() => startEdit('bill_due')} />
+        </span>
+      </span>
+    </div>
+  );
+  const createdCell = (
+    <div className="qrow-cell">
+      <span className="qrow-label">ลงคิว</span>
+      <span>{q.created_at ? `${q.created_at.slice(11, 16)} น.` : '-'}</span>
+    </div>
   );
   const code = (
     <>
@@ -122,7 +129,18 @@ export default function QueueRow({ queue: q, busy, onFinish, onRevert, onSave })
               aria-label="หัวแฟม"
             />
           </label>
-          {info}
+          <label className="qrow-cell">
+            <span className="qrow-label">หมดรอบบิล</span>
+            <input
+              ref={billRef}
+              type="date"
+              value={draft.bill_due}
+              onChange={set('bill_due')}
+              required
+              aria-label="วันหมดรอบบิล"
+            />
+          </label>
+          {createdCell}
           <div className="qrow-actions">
             <button type="submit" className="btn btn-sm btn-primary" disabled={saving}>
               {saving ? 'กำลังบันทึก…' : 'บันทึก'}
@@ -159,10 +177,12 @@ export default function QueueRow({ queue: q, busy, onFinish, onRevert, onSave })
             </span>
           </span>
         </div>
-        {info}
+        {billCell}
+        {createdCell}
         <div className="qrow-actions">
           <button type="button" className="btn btn-sm btn-done" onClick={onFinish} disabled={busy}>แก้ไขเสร็จแล้ว</button>
           <button type="button" className="btn btn-sm btn-ghost" onClick={onRevert} disabled={busy}>↩ ย้อนสถานะ</button>
+          <button type="button" className="btn btn-sm btn-danger" onClick={onDelete} disabled={busy}>ลบ</button>
         </div>
       </div>
       {legacy && <p className="qrow-note muted small pre">{legacy}</p>}

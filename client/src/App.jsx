@@ -13,6 +13,8 @@ import Admin from './pages/Admin.jsx';
 export default function App() {
   const { pathname } = useLocation();
   const isAdmin = pathname.startsWith('/admin');
+  // หน้าฟอร์มลงคิวไม่แสดงประกาศ ให้ลูกค้าโฟกัสที่การกรอก
+  const showAnnouncements = !isAdmin && pathname !== '/book';
 
   // จำลิงก์ LINE ไว้ ปุ่มติดต่อจะใช้ได้แม้เซิร์ฟเวอร์ล่มภายหลัง
   useEffect(() => { refreshLineUrl(); }, []);
@@ -31,7 +33,7 @@ export default function App() {
         </header>
       )}
       <main className="container">
-        {!isAdmin && <Announcements />}
+        {showAnnouncements && <Announcements />}
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/book" element={<BookForm />} />

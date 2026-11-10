@@ -16,6 +16,9 @@ export function thaiDateTime(s) {
   return `${thaiDate(s)} เวลา ${s.slice(11, 16)} น.`;
 }
 
+/** เลขคิวจากรหัส เช่น A01-101169-7769 → A01 */
+export const queueNo = (code) => String(code || '').split('-')[0];
+
 export const STATUS_LABEL = {
   waiting: 'รอแก้ไข',
   in_progress: 'กำลังแก้ไข',

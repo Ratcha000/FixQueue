@@ -38,6 +38,7 @@ const DEFAULT_SETTINGS = [
 ];
 
 const CACHE_MS = 15_000;
+const WRITE_ACTIONS = new Set(['append', 'update', 'remove', 'replaceAll', 'archive']);
 const TIMEOUT_MS = 25_000;
 
 const rowToObject = (name, r) => Object.fromEntries(HEADERS[name].map((h, j) => [h, r[j] ?? '']));
@@ -50,9 +51,29 @@ class AppsScriptStore {
     this.url = url;
     this.secret = secret;
     this.cache = new Map();
+    this.version = new Map(); // เพิ่มทุกครั้งที่เขียนชีต ใช้กันข้อมูลเก่าทับข้อมูลใหม่ในแคช
+    this.inflight = new Map(); // การอ่านที่กำลังรออยู่ (ลูกค้าหลายคนโหลดพร้อมกันจะใช้ผลเดียวกัน)
+  }
+
+  /** หลังเขียนชีต: ล้างแคช และทำให้การอ่านที่ค้างอยู่ก่อนหน้าไม่ถูกเก็บลงแคช */
+  invalidate(name) {
+    this.version.set(name, (this.version.get(name) || 0) + 1);
+    this.cache.delete(name);
+    this.inflight.delete(name);
   }
 
   async call(action, params = {}) {
+    if (!WRITE_ACTIONS.has(action)) return this.request(action, params);
+    try {
+      return await this.request(action, params);
+    } finally {
+      // ล้างแคชเสมอ แม้เขียนพลาดหรือหมดเวลา (Apps Script อาจเขียนสำเร็จไปแล้ว)
+      if (params.sheet) this.invalidate(params.sheet);
+      if (action === 'archive') { this.invalidate('Queues'); this.invalidate('Archive'); }
+    }
+  }
+
+  async request(action, params) {
     const res = await fetch(this.url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -84,27 +105,40 @@ class AppsScriptStore {
   }
 
   async getRows(name, { fresh = false } = {}) {
-    const hit = this.cache.get(name);
-    if (!fresh && hit && Date.now() - hit.at < CACHE_MS) return hit.rows;
-    const { header, rows: raw } = await this.call('getRows', { sheet: name });
-    // จับคู่ตามชื่อหัวตาราง (แอดมินสลับลำดับคอลัมน์ใน Sheet ได้)
-    const rows = raw.map((r) => {
-      const obj = Object.fromEntries(header.map((h, i) => [h, r[i] ?? '']));
-      return clean(name, obj);
+    if (!fresh) {
+      const hit = this.cache.get(name);
+      if (hit && Date.now() - hit.at < CACHE_MS) return hit.rows;
+      const pending = this.inflight.get(name);
+      if (pending) return pending;
+    }
+    const startVersion = this.version.get(name) || 0;
+    const job = this.call('getRows', { sheet: name }).then(({ header, rows: raw }) => {
+      // จับคู่ตามชื่อหัวตาราง (แอดมินสลับลำดับคอลัมน์ใน Sheet ได้)
+      const rows = raw.map((r) => {
+        const obj = Object.fromEntries(header.map((h, i) => [h, r[i] ?? '']));
+        return clean(name, obj);
+      });
+      // ถ้ามีการเขียนชีตระหว่างที่อ่านอยู่ ข้อมูลชุดนี้อาจเก่าแล้ว: ไม่เก็บลงแคช
+      if ((this.version.get(name) || 0) === startVersion) {
+        this.cache.set(name, { at: Date.now(), rows });
+      }
+      return rows;
     });
-    this.cache.set(name, { at: Date.now(), rows });
-    return rows;
+    if (!fresh) {
+      this.inflight.set(name, job);
+      const done = () => { if (this.inflight.get(name) === job) this.inflight.delete(name); };
+      job.then(done, done);
+    }
+    return job;
   }
 
   async append(name, obj) {
     await this.call('append', { sheet: name, obj: clean(name, obj) });
-    this.cache.delete(name);
   }
 
   /** อัปเดตแถวที่คอลัมน์หลัก (เช่น code) ตรงกัน */
   async update(name, obj) {
     await this.call('update', { sheet: name, key: KEY[name], obj: clean(name, obj) });
-    this.cache.delete(name);
   }
 
   /** ลบแถวที่คอลัมน์หลักตรงกับ value */
@@ -117,19 +151,15 @@ class AppsScriptStore {
       }
       throw err;
     }
-    this.cache.delete(name);
   }
 
   async replaceAll(name, objs) {
     await this.call('replaceAll', { sheet: name, objs: objs.map((o) => clean(name, o)) });
-    this.cache.delete(name);
   }
 
   /** ย้ายคิวที่เสร็จแล้วและวันนัดก่อน `before` ไปชีต Archive คืนค่าจำนวนที่ย้าย */
   async archive(before) {
-    const moved = await this.call('archive', { before });
-    this.cache.delete('Queues');
-    return moved;
+    return this.call('archive', { before });
   }
 }
 
